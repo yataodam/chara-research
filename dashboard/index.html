@@ -1,0 +1,403 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>キャラIP調査ダッシュボード</title>
+  <style>
+    :root {
+      --bg: #09090f;
+      --surface: #111118;
+      --surface2: #1a1a26;
+      --border: #2a2a3a;
+      --accent: #7c5cfc;
+      --cyan: #2aecda;
+      --pink: #f06eaa;
+      --yellow: #f0d060;
+      --text: #e0e0ee;
+      --muted: #7878a0;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      background: var(--bg);
+      color: var(--text);
+      font-family: system-ui, 'Noto Sans JP', sans-serif;
+      min-height: 100vh;
+      line-height: 1.6;
+    }
+
+    /* ── Header ── */
+    header {
+      position: sticky;
+      top: 0;
+      z-index: 100;
+      background: rgba(9,9,15,0.92);
+      backdrop-filter: blur(12px);
+      border-bottom: 1px solid var(--border);
+      padding: 14px 32px;
+      display: flex;
+      align-items: center;
+      gap: 20px;
+    }
+    .logo { font-size: 17px; font-weight: 700; letter-spacing: 0.02em; }
+    .logo span { color: var(--accent); }
+    .date-nav { display: flex; gap: 8px; flex-wrap: wrap; flex: 1; }
+    .date-btn {
+      padding: 4px 14px;
+      border-radius: 20px;
+      border: 1px solid var(--border);
+      background: transparent;
+      color: var(--muted);
+      font-size: 13px;
+      cursor: pointer;
+      transition: all 0.15s;
+    }
+    .date-btn:hover { border-color: var(--accent); color: var(--text); }
+    .date-btn.active { background: var(--accent); border-color: var(--accent); color: #fff; }
+    .header-date { font-size: 12px; color: var(--muted); white-space: nowrap; }
+
+    /* ── Main ── */
+    main { max-width: 1200px; margin: 0 auto; padding: 36px 24px; }
+
+    /* ── Section ── */
+    .section { margin-bottom: 52px; }
+    .section-header {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      margin-bottom: 20px;
+      padding-bottom: 12px;
+      border-bottom: 1px solid var(--border);
+    }
+    .section-icon { font-size: 18px; }
+    .section-title { font-size: 13px; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase; }
+    .section-count {
+      font-size: 12px;
+      color: var(--muted);
+      background: var(--surface2);
+      padding: 2px 9px;
+      border-radius: 10px;
+    }
+
+    /* ── Grid ── */
+    .cards-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(290px, 1fr));
+      gap: 16px;
+    }
+
+    /* ── Competitor card ── */
+    .competitor-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 20px;
+      transition: border-color 0.15s;
+    }
+    .competitor-card:hover { border-color: var(--accent); }
+    .card-name { font-size: 15px; font-weight: 600; margin-bottom: 6px; }
+    .card-platform {
+      display: inline-block;
+      font-size: 11px;
+      color: var(--cyan);
+      background: rgba(42,236,218,0.1);
+      padding: 2px 9px;
+      border-radius: 10px;
+      margin-bottom: 14px;
+    }
+    .card-label {
+      font-size: 10px;
+      color: var(--muted);
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+      margin-bottom: 3px;
+      margin-top: 10px;
+    }
+    .card-text { font-size: 13px; line-height: 1.55; }
+    .diff-badge {
+      display: inline-block;
+      font-size: 12px;
+      color: var(--pink);
+      background: rgba(240,110,170,0.1);
+      padding: 3px 10px;
+      border-radius: 10px;
+      margin-top: 10px;
+    }
+
+    /* ── Trends ── */
+    .keywords-wrap { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 18px; }
+    .keyword-tag {
+      padding: 5px 14px;
+      border-radius: 20px;
+      font-size: 13px;
+      font-weight: 500;
+      border: 1px solid var(--border);
+      background: var(--surface2);
+    }
+    .keyword-tag.hot { border-color: var(--accent); color: var(--accent); background: rgba(124,92,252,0.1); }
+    .trend-summary {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-left: 3px solid var(--cyan);
+      border-radius: 8px;
+      padding: 16px 20px;
+      font-size: 14px;
+      line-height: 1.75;
+      margin-bottom: 16px;
+    }
+    .trend-points { display: flex; flex-direction: column; gap: 8px; }
+    .trend-point {
+      display: flex;
+      gap: 10px;
+      font-size: 13px;
+      padding: 10px 16px;
+      background: var(--surface);
+      border-radius: 8px;
+      border: 1px solid var(--border);
+    }
+    .trend-point::before { content: "▸"; color: var(--cyan); flex-shrink: 0; }
+
+    /* ── Proposal card ── */
+    .proposal-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 24px;
+      position: relative;
+      overflow: hidden;
+      transition: border-color 0.15s;
+    }
+    .proposal-card:hover { border-color: var(--yellow); }
+    .proposal-card::before {
+      content: '';
+      position: absolute;
+      top: 0; left: 0; right: 0;
+      height: 2px;
+      background: linear-gradient(90deg, var(--accent), var(--cyan));
+    }
+    .proposal-num { font-size: 11px; color: var(--muted); margin-bottom: 4px; }
+    .concept-word { font-size: 22px; font-weight: 700; color: var(--yellow); margin-bottom: 16px; }
+    .features-list { display: flex; flex-direction: column; gap: 6px; margin-bottom: 16px; }
+    .feature-item { display: flex; gap: 8px; font-size: 13px; }
+    .feature-item::before { content: "○"; color: var(--accent); flex-shrink: 0; }
+    .proposal-meta {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 12px;
+      margin-top: 16px;
+      padding-top: 16px;
+      border-top: 1px solid var(--border);
+    }
+    .meta-label { font-size: 10px; color: var(--muted); text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 3px; }
+    .meta-value { font-size: 12px; line-height: 1.45; }
+    .prompt-box {
+      margin-top: 12px;
+      padding: 10px 14px;
+      background: rgba(0,0,0,0.35);
+      border-radius: 6px;
+      font-size: 11px;
+      color: var(--muted);
+      font-family: monospace;
+      word-break: break-word;
+    }
+
+    /* ── Empty ── */
+    .empty-state { text-align: center; padding: 80px 20px; color: var(--muted); }
+    .empty-icon { font-size: 52px; margin-bottom: 20px; }
+    .empty-title { font-size: 16px; font-weight: 600; margin-bottom: 8px; color: var(--text); }
+    .empty-sub { font-size: 13px; line-height: 1.7; }
+
+    /* ── Update indicator ── */
+    .update-status {
+      font-size: 11px;
+      color: var(--muted);
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      white-space: nowrap;
+    }
+    .update-dot {
+      width: 6px; height: 6px;
+      border-radius: 50%;
+      background: var(--muted);
+      flex-shrink: 0;
+    }
+    .update-dot.live { background: var(--cyan); box-shadow: 0 0 6px var(--cyan); }
+  </style>
+</head>
+<body>
+
+<header>
+  <div class="logo">キャラ<span>IP</span>調査</div>
+  <div class="date-nav" id="dateNav"></div>
+  <div class="header-date" id="headerDate"></div>
+  <div class="update-status" id="updateStatus">
+    <span class="update-dot" id="updateDot"></span>
+    <span id="updateText">--</span>
+  </div>
+</header>
+
+<main id="main">
+  <div class="empty-state">
+    <div class="empty-icon">🌙</div>
+    <div>読み込み中...</div>
+  </div>
+</main>
+
+<script src="data/reports.js"></script>
+<script>
+  let current = 0;
+
+  function fmt(s) {
+    const d = new Date(s + 'T00:00:00');
+    return `${d.getFullYear()}/${String(d.getMonth()+1).padStart(2,'0')}/${String(d.getDate()).padStart(2,'0')}`;
+  }
+
+  function nav() {
+    const el = document.getElementById('dateNav');
+    el.innerHTML = '';
+    (window.REPORTS || []).forEach((r, i) => {
+      const b = document.createElement('button');
+      b.className = 'date-btn' + (i === current ? ' active' : '');
+      b.textContent = fmt(r.date);
+      b.onclick = () => { current = i; render(); };
+      el.appendChild(b);
+    });
+  }
+
+  function esc(s) {
+    return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+  }
+
+  function render() {
+    nav();
+    const main = document.getElementById('main');
+    const reports = window.REPORTS || [];
+
+    if (reports.length === 0) {
+      main.innerHTML = `
+        <div class="empty-state">
+          <div class="empty-icon">🌙</div>
+          <div class="empty-title">まだデータがありません</div>
+          <div class="empty-sub">スケジュールエージェントが初回実行されると<br>ここに調査結果が表示されます。</div>
+        </div>`;
+      return;
+    }
+
+    const r = reports[current];
+    document.getElementById('headerDate').textContent = fmt(r.date);
+    main.innerHTML = competitors(r.competitors) + trends(r.trends) + proposals(r.proposals);
+  }
+
+  function competitors(data) {
+    if (!data || !data.length) return '';
+    return `
+      <section class="section">
+        <div class="section-header">
+          <span class="section-icon">🏆</span>
+          <span class="section-title">競合情報まとめ</span>
+          <span class="section-count">${data.length}件</span>
+        </div>
+        <div class="cards-grid">
+          ${data.map(c => `
+            <div class="competitor-card">
+              <div class="card-name">${esc(c.name)}</div>
+              <span class="card-platform">${esc(c.platform)}</span>
+              <div class="card-label">特徴</div>
+              <div class="card-text">${esc(c.features)}</div>
+              <div class="card-label">人気の理由</div>
+              <div class="card-text">${esc(c.reason)}</div>
+              <div class="diff-badge">▷ ${esc(c.diff)}</div>
+            </div>
+          `).join('')}
+        </div>
+      </section>`;
+  }
+
+  function trends(data) {
+    if (!data) return '';
+    const kw = (data.keywords || []).map((k, i) =>
+      `<span class="keyword-tag ${i < 4 ? 'hot' : ''}">${esc(k)}</span>`).join('');
+    const pts = (data.points || []).map(p =>
+      `<div class="trend-point">${esc(p)}</div>`).join('');
+    return `
+      <section class="section">
+        <div class="section-header">
+          <span class="section-icon">📊</span>
+          <span class="section-title">市場トレンド分析</span>
+        </div>
+        <div class="keywords-wrap">${kw}</div>
+        <div class="trend-summary">${esc(data.summary)}</div>
+        <div class="trend-points">${pts}</div>
+      </section>`;
+  }
+
+  function proposals(data) {
+    if (!data || !data.length) return '';
+    return `
+      <section class="section">
+        <div class="section-header">
+          <span class="section-icon">✨</span>
+          <span class="section-title">キャラクター案</span>
+          <span class="section-count">${data.length}案</span>
+        </div>
+        <div class="cards-grid">
+          ${data.map((p, i) => `
+            <div class="proposal-card">
+              <div class="proposal-num">案 ${i + 1}</div>
+              <div class="concept-word">${esc(p.concept)}</div>
+              <div class="features-list">
+                ${(p.features || []).map(f => `<div class="feature-item">${esc(f)}</div>`).join('')}
+              </div>
+              <div class="proposal-meta">
+                <div class="meta-item">
+                  <div class="meta-label">競合との差別化</div>
+                  <div class="meta-value">${esc(p.diff)}</div>
+                </div>
+                <div class="meta-item">
+                  <div class="meta-label">トレンド親和性</div>
+                  <div class="meta-value">${esc(p.trend)}</div>
+                </div>
+              </div>
+              ${p.prompt ? `<div class="prompt-box">🖼 ${esc(p.prompt)}</div>` : ''}
+            </div>
+          `).join('')}
+        </div>
+      </section>`;
+  }
+
+  render();
+
+  // ── 自動更新検知（Python サーバー起動時のみ有効）──
+  let knownSize = null;
+  const dot = document.getElementById('updateDot');
+  const txt = document.getElementById('updateText');
+
+  function setStatus(live, label) {
+    dot.className = 'update-dot' + (live ? ' live' : '');
+    txt.textContent = label;
+  }
+
+  async function checkUpdate() {
+    try {
+      const r = await fetch('data/reports.js?' + Date.now(), { method: 'HEAD' });
+      const size = r.headers.get('content-length');
+      const now = new Date().toLocaleTimeString('ja-JP', { hour: '2-digit', minute: '2-digit' });
+      if (knownSize !== null && size !== knownSize) {
+        setStatus(true, '更新検知 → 再読込中...');
+        setTimeout(() => location.reload(), 800);
+      } else {
+        setStatus(true, '自動更新 ON · ' + now + ' 確認済');
+      }
+      knownSize = size;
+    } catch {
+      // file:// で開いている場合はサーバー不要モード
+      setStatus(false, 'サーバー起動で自動更新 ON');
+    }
+  }
+
+  checkUpdate();
+  setInterval(checkUpdate, 60 * 1000); // 1分ごとに確認
+</script>
+</body>
+</html>
